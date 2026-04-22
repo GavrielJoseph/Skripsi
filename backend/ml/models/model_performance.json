@@ -1,0 +1,11 @@
+{
+  "accuracy": 83.73,
+  "precision": 83.66,
+  "recall": 81.37,
+  "f1_score": 82.5,
+  "training_size": 47740,
+  "testing_size": 11935,
+  "total_data": 59675,
+  "dataset": "sekarmulyani/ulasan-beauty-products",
+  "algorithm": "Word2Vec + Logistic Regression"
+}
