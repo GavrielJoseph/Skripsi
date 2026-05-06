@@ -8,11 +8,14 @@ class AnalysisSession extends Model
 {
     protected $fillable = [
         'filename',
+        'brand_name',
         'status',
         'total_reviews',
         'positive_count',
         'negative_count',
         'n_clusters',
+        'silhouette_score',
+        'confidence_distribution',
     ];
 
     // Satu session punya banyak results

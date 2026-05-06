@@ -9,7 +9,7 @@ Route::post('/analyze', [AnalysisController::class, 'analyze']);
 // Ambil hasil analisis berdasarkan session ID
 Route::get('/results/{id}', [AnalysisController::class, 'results']);
 
-// Ambil semua history sesi (untuk dashboard)
+// Ambil semua history sesi (halaman dashboard)
 Route::get('/sessions', [AnalysisController::class, 'sessions']);
 
 // Dashboard per brand
@@ -17,3 +17,7 @@ Route::get('/sessions/by-brand', [AnalysisController::class, 'sessionsByBrand'])
 
 // Model performance
 Route::get('/model-performance', [AnalysisController::class, 'modelPerformance']);
+
+// Hapus Data (Delete)
+Route::delete('/brands/{brand_name}', [AnalysisController::class, 'deleteBrand']);
+Route::delete('/sessions/{id}', [AnalysisController::class, 'deleteSession']);

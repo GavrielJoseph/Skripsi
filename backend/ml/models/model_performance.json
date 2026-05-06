@@ -1,11 +1,82 @@
 {
-  "accuracy": 83.73,
-  "precision": 83.66,
-  "recall": 81.37,
-  "f1_score": 82.5,
-  "training_size": 47740,
-  "testing_size": 11935,
-  "total_data": 59675,
-  "dataset": "sekarmulyani/ulasan-beauty-products",
-  "algorithm": "Word2Vec + Logistic Regression"
+  "accuracy": 86.49,
+  "precision": 86.93,
+  "recall": 86.49,
+  "f1_score": 86.56,
+  "training_size": 51695,
+  "testing_size": 12924,
+  "total_data": 64619,
+  "confusion_matrix": {
+    "tp": 6384,
+    "tn": 4794,
+    "fp": 605,
+    "fn": 1141,
+    "labels": [
+      "negative",
+      "positive"
+    ]
+  },
+  "best_params": {
+    "C": 1.0,
+    "class_weight": "balanced"
+  },
+  "grid_search_results": [
+    {
+      "params": "{'C': 0.1, 'class_weight': None}",
+      "mean_f1": 0.862,
+      "std_f1": 0.0026
+    },
+    {
+      "params": "{'C': 0.1, 'class_weight': 'balanced'}",
+      "mean_f1": 0.8629,
+      "std_f1": 0.0026
+    },
+    {
+      "params": "{'C': 1.0, 'class_weight': None}",
+      "mean_f1": 0.8622,
+      "std_f1": 0.003
+    },
+    {
+      "params": "{'C': 1.0, 'class_weight': 'balanced'}",
+      "mean_f1": 0.8632,
+      "std_f1": 0.003
+    },
+    {
+      "params": "{'C': 10.0, 'class_weight': None}",
+      "mean_f1": 0.8622,
+      "std_f1": 0.0031
+    },
+    {
+      "params": "{'C': 10.0, 'class_weight': 'balanced'}",
+      "mean_f1": 0.8632,
+      "std_f1": 0.0029
+    }
+  ],
+  "datasets": [
+    "sekarmulyani: 45781",
+    "G2G Tokopedia: 17386",
+    "Heyxi Tokopedia: 1609"
+  ],
+  "kamus_normalisasi": [
+    "nasalsabila/kamus-alay (Salsabila et al., 2018)",
+    "okkyibrohim/new_kamusalay (Ibrohim & Budi, 2019)",
+    "Kamus skincare tambahan (dikurasi manual)"
+  ],
+  "algorithm": "Word2Vec Skip-gram (epochs=20) + Bigram + Logistic Regression (GridSearchCV)",
+  "clustering": "Agglomerative Hierarchical Clustering (average linkage) + Silhouette Score",
+  "preprocessing": [
+    "Terjemahan Emoji",
+    "Noise Filter",
+    "Normalisasi Huruf Berulang",
+    "Cleaning (URL, mention, hashtag, unicode)",
+    "Case Folding",
+    "Normalisasi Alay (3 kamus)",
+    "Tokenizing",
+    "Stopword Removal (kata negasi dipertahankan)",
+    "Negasi Handling",
+    "Stemming PySastrawi",
+    "Bigram Detection"
+  ],
+  "label_method": "Rating 1-2=Negatif, 4-5=Positif, 3=Dihapus (Liu, 2012)",
+  "hyperparameter_tuning": "GridSearchCV 5-fold CV, scoring=f1_macro"
 }

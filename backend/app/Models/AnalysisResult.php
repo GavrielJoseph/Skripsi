@@ -8,8 +8,10 @@ class AnalysisResult extends Model
 {
     protected $fillable = [
         'session_id',
+        'product_name',
         'review_text',
         'sentiment',
+        'confidence',
         'cluster_id',
         'keywords',
     ];
