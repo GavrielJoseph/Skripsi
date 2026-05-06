@@ -1,55 +1,55 @@
 {
-  "accuracy": 86.49,
-  "precision": 86.93,
-  "recall": 86.49,
-  "f1_score": 86.56,
+  "accuracy": 86.42,
+  "precision": 86.84,
+  "recall": 86.42,
+  "f1_score": 86.49,
   "training_size": 51695,
   "testing_size": 12924,
   "total_data": 64619,
   "confusion_matrix": {
-    "tp": 6384,
-    "tn": 4794,
-    "fp": 605,
-    "fn": 1141,
+    "tp": 6388,
+    "tn": 4781,
+    "fp": 618,
+    "fn": 1137,
     "labels": [
       "negative",
       "positive"
     ]
   },
   "best_params": {
-    "C": 1.0,
+    "C": 10.0,
     "class_weight": "balanced"
   },
   "grid_search_results": [
     {
       "params": "{'C': 0.1, 'class_weight': None}",
-      "mean_f1": 0.862,
+      "mean_f1": 0.8607,
       "std_f1": 0.0026
     },
     {
       "params": "{'C': 0.1, 'class_weight': 'balanced'}",
-      "mean_f1": 0.8629,
-      "std_f1": 0.0026
+      "mean_f1": 0.8623,
+      "std_f1": 0.003
     },
     {
       "params": "{'C': 1.0, 'class_weight': None}",
-      "mean_f1": 0.8622,
-      "std_f1": 0.003
+      "mean_f1": 0.8614,
+      "std_f1": 0.0027
     },
     {
       "params": "{'C': 1.0, 'class_weight': 'balanced'}",
-      "mean_f1": 0.8632,
-      "std_f1": 0.003
+      "mean_f1": 0.863,
+      "std_f1": 0.0028
     },
     {
       "params": "{'C': 10.0, 'class_weight': None}",
-      "mean_f1": 0.8622,
-      "std_f1": 0.0031
+      "mean_f1": 0.8612,
+      "std_f1": 0.0029
     },
     {
       "params": "{'C': 10.0, 'class_weight': 'balanced'}",
       "mean_f1": 0.8632,
-      "std_f1": 0.0029
+      "std_f1": 0.0027
     }
   ],
   "datasets": [
