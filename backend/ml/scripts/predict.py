@@ -5,10 +5,10 @@ import nltk
 
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import normalize
 from collections import Counter
 
 warnings.filterwarnings("ignore")
-
 
 BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
@@ -23,10 +23,17 @@ nltk.download("punkt",     quiet=True)
 nltk.download("stopwords", quiet=True)
 from nltk.corpus import stopwords
 
+CUSTOM_STOPWORDS = {
+    "nya", "yg", "aja", "jd", "tp", "banget", "sih", "buat", "biar", "mah",
+    "kalo", "pas", "terus", "sama", "udah", "gini", "gitu", "ya", "deh", "dong",
+    "kok", "kan", "pake", "sekali", "baru", "dari", "ke", "di", "ini", "itu",
+    "yang", "dan", "aku", "saya", "dia", "mereka", "kita", "kami", "untuk",
+    "dalam", "pada", "juga", "sudah", "ada", "saja", "lagi", "karena",
+    "kalau", "pun", "bisa", "akan", "jadi", "tapi"
+}
+
 NEGASI_WORDS = {"tidak", "bukan", "jangan", "belum", "tanpa", "kurang"}
-STOPWORDS_ID = set(stopwords.words("indonesian")) - NEGASI_WORDS
-# kata negasi sengaja TIDAK dimasukkan stopwords
-# karena mengubah makna sentimen ("tidak cocok" != "cocok")
+STOPWORDS_ID = set(stopwords.words("indonesian")).union(CUSTOM_STOPWORDS) - NEGASI_WORDS
 
 try:
     from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
@@ -35,18 +42,12 @@ try:
 except ImportError:
     STEMMER_AVAILABLE = False
 
-
-# EMOJI MAP untuk emoji yang sering muncul pada ulasan tokopedia
 EMOJI_MAP = {
-    "👍": " bagus ", "👎": " buruk ",
-    "😍": " suka ",  "🥰": " suka ",  "😘": " suka ",
-    "❤️": " suka ",  "💕": " suka ",  "💞": " suka ",
-    "😊": " senang ", "😁": " senang ", "🙏": " terima kasih ",
-    "😭": " kecewa ", "😢": " kecewa ", "😡": " marah ",
-    "🤢": " buruk ",  "🤮": " buruk ",
-    "⭐": " bintang ", "🔥": " bagus ", "✨": " bagus ",
+    "👍": " bagus ", "👎": " buruk ", "😍": " suka ",  "🥰": " suka ",  "😘": " suka ",
+    "❤️": " suka ",  "💕": " suka ",  "💞": " suka ", "😊": " senang ", "😁": " senang ",
+    "🙏": " terima kasih ", "😭": " kecewa ", "😢": " kecewa ", "😡": " marah ",
+    "🤢": " buruk ",  "🤮": " buruk ", "⭐": " bintang ", "🔥": " bagus ", "✨": " bagus ",
 }
-
 
 TOPIC_KEYWORDS = {
     "efek_produk": [
@@ -59,8 +60,7 @@ TOPIC_KEYWORDS = {
     "pengiriman": [
         "kirim","kurir","paket","ekspedisi","pengiriman","tiba",
         "ongkir","ongkos","estimasi","tracking","resi",
-        "jnt","jne","sicepat","anteraja","gosend",
-        "bocor","segel",
+        "jnt","jne","sicepat","anteraja","gosend","bocor","segel",
     ],
     "harga_nilai": [
         "harga","mahal","murah","worth","sepadan","promo","diskon","hemat","terjangkau",
@@ -79,38 +79,35 @@ TOPIC_KEYWORDS = {
 TOPIC_WEIGHT    = 3.0
 ALL_TOPIC_WORDS = set(w for words in TOPIC_KEYWORDS.values() for w in words)
 
-# Label tampilan per topik untuk UI
 TOPIC_LABELS = {
-    "efek_produk": "Efek Produk",
-    "pengiriman":  "Pengiriman",
-    "harga_nilai": "Harga & Nilai",
-    "kemasan":     "Kemasan",
-    "pembelian":   "Pembelian & Keaslian",
+    "efek_produk": "Efek & Kecocokan Produk",
+    "pengiriman":  "Layanan Pengiriman",
+    "harga_nilai": "Harga & Kualitas",
+    "kemasan":     "Kondisi Kemasan",
+    "pembelian":   "Layanan Toko & Keaslian",
 }
 
-
-# KAMUS ALAY
-# File ini berisi gabungan 3 sumber:
-# 1. nasalsabila/kamus-alay (Salsabila et al., 2018)
-# 2. okkyibrohim/new_kamusalay (Ibrohim & Budi, 2019)
-# 3. Kamus skincare manual (dikurasi sendiri dan bantuan AI)
-KAMUS_FALLBACK = {
-    "tak":"tidak","gak":"tidak","ga":"tidak","ngga":"tidak","nggak":"tidak",
-    "tdk":"tidak","gk":"tidak","ngak":"tidak","kagak":"tidak",
-    "bgt":"banget","yg":"yang","dg":"dengan","utk":"untuk",
-    "udh":"sudah","udah":"sudah","blm":"belum","jg":"juga",
-    "krn":"karena","klo":"kalau","kalo":"kalau","aja":"saja",
-    "gue":"saya","gw":"saya","lo":"kamu","pake":"pakai",
-    "emang":"memang","msh":"masih","sampe":"sampai",
-    "bruntusan":"berjerawat","gatel":"gatal","lembab":"lembap",
-    "glowing":"bercahaya","bestt":"bagus","best":"bagus",
-    "mantap":"bagus","oke":"baik","ok":"baik","jelek":"buruk",
-    "rekomen":"rekomendasi","ampuh":"efektif","worth":"sepadan",
-    "murah":"murah","muka":"wajah","iritasi":"iritasi",
-    "skincare":"skincare","moisturizer":"pelembap","sunscreen":"tabir surya",
-    "ori":"original","packaging":"kemasan","makasih":"terima kasih",
-    "alhamdulillah":"bagus","sih":"","deh":"","dong":"","wkwk":"",
+# Artefak scraping Tokopedia yang sering ikut ter-scrape
+# bukan ulasan konsumen, harus difilter sebelum analisis
+TOKOPEDIA_ARTIFACTS = {
+    "lihat balasan",
+    "lihat semua",
+    "lihat semua ulasan",
+    "balas",
+    "laporkan",
+    "suka",
 }
+
+# Prefix atribut produk tanpa konten ulasan
+ATTRIBUTE_PREFIXES = (
+    "varian:",
+    "ukuran:",
+    "warna:",
+    "tipe:",
+    "size:",
+    "variant:",
+)
+
 
 def load_kamus():
     if os.path.exists(KAMUS_PATH):
@@ -119,7 +116,7 @@ def load_kamus():
         if "tak" not in kamus:
             kamus["tak"] = "tidak"
         return kamus
-    return KAMUS_FALLBACK
+    return {}
 
 KAMUS_ALAY = load_kamus()
 
@@ -130,17 +127,12 @@ def translate_emoji(text):
     return text
 
 def clean_repeated_chars(text):
-    # regex (.)\1{2,} cocok dengan karakter apapun yang muncul > 2x berturut
-    # \1 adalah backreference ke karakter yang match
     return re.sub(r'(.)\1{2,}', r'\1\1', text)
 
 def normalize_alay(text):
     return " ".join([v for w in text.split() for v in [KAMUS_ALAY.get(w, w)] if v])
 
 def handle_negation(tokens):
-    # Gabungkan kata negasi dengan kata berikutnya
-    # "tidak cocok" → "tidak_cocok" (satu token)
-    # supaya stemmer tidak memisahkan maknanya
     result = []
     i = 0
     while i < len(tokens):
@@ -153,8 +145,7 @@ def handle_negation(tokens):
     return result
 
 def preprocess_text(text):
-    if not isinstance(text, str) or len(text.strip()) < 3:
-        return []
+    if not isinstance(text, str) or len(text.strip()) < 3: return []
     text = translate_emoji(text)
     text = clean_repeated_chars(text)
     text = re.sub(r"http\S+|www\S+|@\w+|#\w+", "", text)
@@ -166,48 +157,59 @@ def preprocess_text(text):
     tokens = [t for t in tokens if t not in STOPWORDS_ID and len(t) >= 2]
     tokens = handle_negation(tokens)
     if STEMMER_AVAILABLE:
-        # token tidak_ dikecualikan dari stemming
-        # karena PySastrawi akan memecah "tidak_cocok" menjadi "tidak" + "cocok"
         tokens = [t if t.startswith("tidak_") else stemmer.stem(t) for t in tokens]
     return tokens
 
 def apply_bigram(tokens, phraser):
-    if phraser is None:
-        return tokens
+    if phraser is None: return tokens
     return list(phraser[tokens])
 
+
 def is_noise(text):
-    # Filter teks yang tidak punya konten linguistik yang bisa dianalisis.
-    # Tiga layer check — dari yang paling cepat ke paling teliti.
+    """
+    Filter teks yang bukan ulasan konsumen.
+    Ada dua layer:
+    1. Artefak scraping Tokopedia (tombol UI yang ikut ter-scrape)
+    2. Filter statistik untuk teks sangat pendek / random
+    """
     if not isinstance(text, str):
         return True
+
     t = text.strip()
+
     if len(t) < 5:
         return True
 
+    # Layer 1: Filter artefak scraping Tokopedia
+    # Teks seperti "Lihat Balasan", "Varian: 50 ml" bukan ulasan konsumen
+    t_lower = t.lower()
+
+    if t_lower in TOKOPEDIA_ARTIFACTS:
+        return True
+
+    # Filter baris info atribut produk tanpa konten ulasan (< 25 char)
+    # "Varian: 100 ml" → dibuang, tapi "Varian: bagus dan cocok" → tidak dibuang
+    if any(t_lower.startswith(p) for p in ATTRIBUTE_PREFIXES) and len(t) < 25:
+        return True
+
+    # Layer 2: Filter statistik
     ascii_only = t.encode("ascii", "ignore").decode("ascii").strip()
     alpha = re.sub(r'[^a-zA-Z]', '', ascii_only)
 
     if len(alpha) < 3:
-        if len(t) >= 20:
-            return False
-        return True
+        return False if len(t) >= 20 else True
 
     words = ascii_only.lower().split()
-    if len(words) >= 10:
-        if len(set(words)) / len(words) >= 0.4:
-            return False
+    if len(words) >= 10 and len(set(words)) / len(words) >= 0.4:
+        return False
 
     ratio = len(set(alpha.lower())) / len(alpha)
-    if len(alpha) > 200:
-        threshold = 0.06
-    elif len(alpha) > 100:
-        threshold = 0.08
-    elif len(alpha) > 50:
-        threshold = 0.10
-    else:
-        threshold = 0.15
-
+    threshold = (
+        0.06 if len(alpha) > 200 else
+        0.08 if len(alpha) > 100 else
+        0.10 if len(alpha) > 50  else
+        0.15
+    )
     if ratio < threshold:
         return True
 
@@ -218,16 +220,12 @@ def is_noise(text):
     return False
 
 
-# WORD2VEC VECTORS
 def get_document_vector(tokens, w2v_model):
     vectors = [w2v_model.wv[t] for t in tokens if t in w2v_model.wv]
-    if not vectors:
-        return np.zeros(w2v_model.vector_size)
-    return np.mean(vectors, axis=0)
+    return np.mean(vectors, axis=0) if vectors else np.zeros(w2v_model.vector_size)
 
 def get_topic_weighted_vector(tokens, w2v_model):
-    vectors = []
-    weights = []
+    vectors, weights = [], []
     for t in tokens:
         raw = t.replace("tidak_", "")
         if t in w2v_model.wv:
@@ -239,7 +237,6 @@ def get_topic_weighted_vector(tokens, w2v_model):
     return np.average(np.array(vectors), axis=0, weights=np.array(weights))
 
 
-# LOAD MODEL
 def load_models():
     for path in [LR_MODEL_PATH, W2V_MODEL_PATH]:
         if not os.path.exists(path):
@@ -249,38 +246,27 @@ def load_models():
     phraser   = joblib.load(BIGRAM_PATH) if os.path.exists(BIGRAM_PATH) else None
     return lr_model, w2v_model, phraser
 
-
-# LOAD CSV
 def load_csv(csv_path):
     for sep in [";", ","]:
         try:
             tmp = pd.read_csv(csv_path, sep=sep, encoding="utf-8-sig")
-            if len(tmp.columns) > 1:
-                return tmp
-        except Exception:
-            continue
+            if len(tmp.columns) > 1: return tmp
+        except Exception: continue
     return pd.read_csv(csv_path, encoding="utf-8-sig")
 
 def find_text_column(df):
     col_map = {c.lower(): c for c in df.columns}
     for c in ["comment", "review_text", "review", "ulasan", "text", "komentar"]:
-        if c in col_map:
-            return col_map[c]
+        if c in col_map: return col_map[c]
     return df.columns[0]
 
 def find_product_column(df):
     col_map = {c.lower(): c for c in df.columns}
     for c in ["productname", "product_name", "product", "produk", "nama_produk"]:
-        if c in col_map:
-            return col_map[c]
+        if c in col_map: return col_map[c]
     return None
 
 
-# TOPIC DETECTION DARI TEKS MENTAH
-# Berbeda dengan TOPIC_KEYWORDS yang dipakai untuk Word2Vec weighting,
-# fungsi ini bekerja pada teks mentah sebelum preprocessing sehingga
-# kata informal seperti "packing", "ongkir", "ori" tetap terdeteksi.
-# Hasilnya dipakai untuk topic_breakdown dan topic_overview di output.
 TOPIC_RAW_KEYWORDS = {
     "efek_produk": [
         "jerawat","bruntusan","iritasi","gatal","perih","alergi","kulit","wajah","muka",
@@ -291,12 +277,12 @@ TOPIC_RAW_KEYWORDS = {
     ],
     "pengiriman": [
         "kirim","sampai","kurir","paket","ekspedisi","pengiriman","lambat","lama",
-        "ongkir","ongkos","resi","jnt","jne","sicepat","anteraja","gosend","tiba",
-        "datang","estimasi","tracking","cepat"
+        "ongkir","ongkos","resi","jnt","jne","sicepat","anteraja","gosend",
+        "tiba","datang","estimasi","tracking","cepat"
     ],
     "harga_nilai": [
-        "harga","mahal","murah","worth","sepadan","promo","diskon","hemat","terjangkau",
-        "budget","ekonomis","cashback","voucher","sale","harganya","worth it"
+        "harga","mahal","murah","worth","sepadan","promo","diskon","hemat",
+        "terjangkau","budget","ekonomis","cashback","voucher","sale","harganya"
     ],
     "kemasan": [
         "kemasan","packing","packaging","botol","tube","pot","pump","wadah",
@@ -309,183 +295,90 @@ TOPIC_RAW_KEYWORDS = {
 }
 
 def detect_topic_from_raw(text):
-    """Deteksi aspek topik dari teks mentah. Return list topik yang terdeteksi."""
-    if not isinstance(text, str):
-        return []
+    if not isinstance(text, str): return []
     text_lower = text.lower()
-    found = []
-    for topic, words in TOPIC_RAW_KEYWORDS.items():
-        if any(w in text_lower for w in words):
-            found.append(topic)
-    return found
+    return [topic for topic, words in TOPIC_RAW_KEYWORDS.items()
+            if any(w in text_lower for w in words)]
 
 
-# CLUSTERING — AHC (Agglomerative Hierarchical Clustering)
 def find_optimal_k(X, max_k):
     n = len(X)
-
-    # batas bawah: kalau data < 20, langsung return k=2
-    # karena Silhouette tidak stabil di data sangat kecil
-    if n < 20:
-        return 2, -1.0
-
-    best_k     = 2
-    best_score = -1.0
-
-    # range k: dari 2 sampai min(max_k, n//10+1)
-    # batas n//10 mencegah k terlalu dekat dengan jumlah data
-    # (AHC tidak stabil kalau k > 10% dari n)
+    if n < 20: return 2, -1.0
+    best_k, best_score = 2, -1.0
     for k in range(2, min(max_k + 1, n // 10 + 2)):
         try:
-            labels = AgglomerativeClustering(
-                n_clusters=k,
-                linkage="average"  # average linkage = UPGMA
-            ).fit_predict(X)
-
-            if len(set(labels)) < 2:
-                continue
-
-            # sample_size=500 untuk efisiensi:
-            # menghitung Silhouette butuh O(n^2) jarak
-            score = silhouette_score(
-                X, labels,
-                sample_size=min(500, n),
-                random_state=42
-            )
-
+            labels = AgglomerativeClustering(n_clusters=k, linkage="average").fit_predict(X)
+            if len(set(labels)) < 2: continue
+            score = silhouette_score(X, labels, sample_size=min(500, n), random_state=42)
             if score > best_score:
-                best_score = score
-                best_k     = k
-
-        except Exception:
-            continue
-
+                best_score, best_k = score, k
+        except Exception: continue
     return best_k, round(float(best_score), 4)
 
 
 def merge_small_clusters(cluster_labels, X_cluster, n_clusters, min_size):
-    # cluster < min_size digabung ke cluster besar terdekat berdasarkan jarak centroid
-    labels    = cluster_labels.copy()
-    centroids = {}
-
+    labels, centroids = cluster_labels.copy(), {}
     for cid in range(n_clusters):
         mask = labels == cid
-        if mask.sum() > 0:
-            centroids[cid] = X_cluster[mask].mean(axis=0)
-
-    big_clusters = [
-        cid for cid in range(n_clusters)
-        if np.sum(labels == cid) >= min_size
-    ]
-
-    # FIX: kondisi asli "< 2" menghentikan merge saat hanya ada 1 big cluster,
-    # padahal cluster kecil tetap bisa di-merge ke 1 big cluster yang ada.
-    # Kondisi yang benar: stop hanya jika tidak ada big cluster sama sekali.
-    # Contoh kasus yang terfix: 1221 vs 2 vs 1 vs 1 ulasan per cluster →
-    # sebelumnya merge berhenti karena hanya 1 big cluster,
-    # sekarang cluster 2-ulasan dan 1-ulasan di-merge ke cluster 1221-ulasan.
-    if len(big_clusters) < 1:
-        return labels
-
+        if mask.sum() > 0: centroids[cid] = X_cluster[mask].mean(axis=0)
+    big_clusters = [cid for cid in range(n_clusters) if np.sum(labels == cid) >= min_size]
+    if len(big_clusters) < 1: return labels
     for cid in range(n_clusters):
-        if cid in big_clusters:
-            continue
-        if np.sum(labels == cid) == 0:
-            continue
-
-        dists = {
-            big: np.linalg.norm(centroids[cid] - centroids[big])
-            for big in big_clusters
-            if big in centroids
-        }
-        if not dists:
-            continue
-
-        nearest_big = min(dists, key=dists.get)
-        labels[labels == cid] = nearest_big
-
+        if cid in big_clusters or np.sum(labels == cid) == 0: continue
+        dists = {big: np.linalg.norm(centroids[cid] - centroids[big])
+                 for big in big_clusters if big in centroids}
+        if dists:
+            labels[labels == cid] = min(dists, key=dists.get)
     unique_ids = sorted(set(labels))
-    remap      = {old: new for new, old in enumerate(unique_ids)}
+    remap = {old: new for new, old in enumerate(unique_ids)}
     return np.array([remap[c] for c in labels])
 
 
-# KEYWORD EXTRACTION — Relative Frequency Ratio
 def get_distinctive_keywords(cluster_id, all_tokens, cluster_labels, top_n=10):
-    cluster_tokens = []
-    all_corpus     = []
-
+    cluster_tokens, all_corpus = [], []
     for tokens, label in zip(all_tokens, cluster_labels):
-        # token tidak_ dikeluarkan dari keyword karena bentuknya tidak natural
-        # untuk ditampilkan ke user ("tidak_cocok")
         clean = [t for t in tokens if not t.startswith("tidak_")]
         all_corpus.extend(clean)
-        if label == cluster_id:
-            cluster_tokens.extend(clean)
-
-    if not cluster_tokens:
-        return []
-
+        if label == cluster_id: cluster_tokens.extend(clean)
+    if not cluster_tokens: return []
     cluster_freq  = Counter(cluster_tokens)
     cluster_total = max(len(cluster_tokens), 1)
     corpus_freq   = Counter(all_corpus)
     corpus_total  = max(len(all_corpus), 1)
-
-    scores = {}
-    for word, count in cluster_freq.items():
-        if len(word) < 3 or count < 2:
-            continue
-        ratio = (count / cluster_total) / max(corpus_freq[word] / corpus_total, 0.0001)
-        scores[word] = ratio
-
+    scores = {
+        word: (count / cluster_total) / max(corpus_freq[word] / corpus_total, 0.0001)
+        for word, count in cluster_freq.items()
+        if len(word) >= 3 and count >= 2
+    }
     return [w for w, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]]
 
 
-# GENERATE CLUSTER NAME
-# Prioritas 1 : kata yang terdaftar di TOPIC_KEYWORDS (domain skincare eksplisit)
-# Prioritas 2 : kata Indonesia murni panjang >= 4, tanpa underscore
-# Prioritas 3 : fallback apapun selain token negasi
-# Token bigram non-topik (moga_cocok, fast_respon) tidak ditampilkan
-# karena merupakan artefak teknis pipeline, bukan label bermakna
 def generate_cluster_name(keywords):
-    if not keywords:
-        return "Cluster Umum"
-
-    clean_keywords = [
+    if not keywords: return "Topik Umum"
+    clean = [
         k for k in keywords
         if not k.startswith("tidak_")
+        and k not in CUSTOM_STOPWORDS
         and not ("_" in k and k.replace("_", "") not in ALL_TOPIC_WORDS)
     ]
-
-    if not clean_keywords:
-        clean_keywords = [k for k in keywords if not k.startswith("tidak_")]
-    if not clean_keywords:
-        return "Cluster Umum"
-
-    topic_words = [
-        k for k in clean_keywords
-        if k in ALL_TOPIC_WORDS and len(k) >= 4
-    ]
-    if topic_words:
-        return " & ".join(w.capitalize() for w in topic_words[:2])
-
-    indo_words = [k for k in clean_keywords if "_" not in k and len(k) >= 4]
-    if indo_words:
-        return " & ".join(w.capitalize() for w in indo_words[:2])
-
-    return " & ".join(w.capitalize() for w in clean_keywords[:2])
+    if not clean:
+        clean = [k for k in keywords if not k.startswith("tidak_")]
+    if not clean: return "Topik Umum"
+    aspects = [k for k in clean if k in ALL_TOPIC_WORDS and len(k) >= 3]
+    if aspects:
+        return " & ".join(w.capitalize() for w in aspects[:2])
+    indo = [k for k in clean if "_" not in k and len(k) >= 3]
+    if indo:
+        return " & ".join(w.capitalize() for w in indo[:2])
+    return " & ".join(w.capitalize() for w in clean[:2])
 
 
-# TOPIC BREAKDOWN PER CLUSTER
-# Menghitung distribusi aspek topik bisnis dalam setiap cluster.
-# Menjawab: "Dalam cluster ini, ulasan tentang efek produk
-# bersentimen positif atau negatif?"
 def compute_topic_breakdown(cluster_df):
     breakdown = {}
     for topic_key, label in TOPIC_LABELS.items():
         mask   = cluster_df["detected_topics"].apply(lambda t: topic_key in t)
         subset = cluster_df[mask]
-        if len(subset) == 0:
-            continue
+        if len(subset) == 0: continue
         pos = int((subset["sentiment"] == "positive").sum())
         neg = int((subset["sentiment"] == "negative").sum())
         breakdown[topic_key] = {
@@ -498,12 +391,6 @@ def compute_topic_breakdown(cluster_df):
     return breakdown
 
 
-# SAMPLE REVIEWS PER CLUSTER
-# Mengambil contoh ulasan representatif berdasarkan confidence tertinggi.
-# Kriteria:
-#   Positif : panjang >= 30 karakter (ulasan informatif, bukan sekadar "bagus")
-#   Negatif : panjang >= 10 karakter
-# Maksimal 3 sampel per sentimen.
 def get_sample_reviews(cluster_df, n=3):
     samples = {"positive": [], "negative": []}
     for sentiment, min_len in [("positive", 30), ("negative", 10)]:
@@ -515,9 +402,36 @@ def get_sample_reviews(cluster_df, n=3):
     return samples
 
 
-# ============================================================
-# MAIN — alur eksekusi utama
-# ============================================================
+def get_negative_analysis(subset_neg, top_n_keywords=5):
+    if len(subset_neg) == 0:
+        return {"keywords": [], "samples": []}
+
+    SKIP = STOPWORDS_ID | {
+        "product", "produk", "yang", "dan", "di", "ke",
+        "ini", "itu", "saya", "aku", "nya", "dengan",
+        "tidak", "bisa", "juga", "ada", "atau", "sudah",
+    }
+    neg_words = []
+    for text in subset_neg["review_text"]:
+        if not isinstance(text, str): continue
+        clean = re.sub(r'[^a-zA-Z\s]', ' ', text.lower())
+        words = [w for w in clean.split() if len(w) >= 4 and w not in SKIP]
+        neg_words.extend(words)
+
+    word_freq    = Counter(neg_words)
+    top_keywords = [w for w, _ in word_freq.most_common(top_n_keywords * 2)
+                    if len(w) >= 4][:top_n_keywords]
+
+    samples = (
+        subset_neg[subset_neg["review_text"].str.len() >= 20]
+        .sort_values("review_text", key=lambda s: s.str.len(), ascending=False)
+        .head(3)["review_text"]
+        .tolist()
+    )
+
+    return {"keywords": top_keywords, "samples": samples}
+
+
 def main():
     if len(sys.argv) < 2:
         sys.stdout.buffer.write(json.dumps(
@@ -558,8 +472,7 @@ def main():
 
     df["review_text"]  = df[text_col].astype(str)
     df["product_name"] = df[product_col].astype(str) if product_col else ""
-
-    df          = df.dropna(subset=["review_text"]).reset_index(drop=True)
+    df = df.dropna(subset=["review_text"]).reset_index(drop=True)
     total_input = len(df)
 
     if total_input == 0:
@@ -578,17 +491,17 @@ def main():
         ).encode("utf-8"))
         sys.exit(1)
 
-    # deteksi topik dari teks mentah SEBELUM preprocessing
-    # agar kata informal seperti "packing", "ongkir" masih bisa dideteksi
+    # Deteksi topik dari teks mentah SEBELUM preprocessing
     df["detected_topics"] = df["review_text"].apply(detect_topic_from_raw)
 
-    # preprocessing untuk ML
+    # Preprocessing — filter artefak scraping via is_noise()
     df["tokens"] = df["review_text"].apply(preprocess_text)
     df["tokens"] = df["tokens"].apply(lambda t: apply_bigram(t, phraser))
 
+    # Buang teks yang menghasilkan 0 token (termasuk artefak scraping)
     skipped_mask  = df["tokens"].apply(len) == 0
     skipped_count = int(skipped_mask.sum())
-    df            = df[~skipped_mask].reset_index(drop=True)
+    df = df[~skipped_mask].reset_index(drop=True)
 
     if len(df) == 0:
         sys.stdout.buffer.write(json.dumps(
@@ -600,13 +513,17 @@ def main():
     X_sentiment = np.array([get_document_vector(t, w2v_model)       for t in df["tokens"]])
     X_cluster   = np.array([get_topic_weighted_vector(t, w2v_model) for t in df["tokens"]])
 
-    # KLASIFIKASI SENTIMEN (Logistic Regression)
-    # predict() → kelas dengan probabilitas tertinggi ("positive" atau "negative")
-    # predict_proba() → probabilitas untuk setiap kelas [P(negatif), P(positif)]
-    df["sentiment"] = lr_model.predict(X_sentiment)
-    proba           = lr_model.predict_proba(X_sentiment)
-    classes         = list(lr_model.classes_)
+    # L2 normalization sebelum clustering
+    # Membuat AHC menggunakan cosine distance secara efektif
+    # karena Euclidean distance pada vektor ternormalisasi ≡ 2*(1 - cosine_similarity)
+    # Referensi: Manning et al. (2008) Introduction to Information Retrieval, Ch.6
+    if len(X_cluster) > 0:
+        X_cluster = normalize(X_cluster, norm='l2')
 
+    # Klasifikasi sentimen
+    df["sentiment"]  = lr_model.predict(X_sentiment)
+    proba            = lr_model.predict_proba(X_sentiment)
+    classes          = list(lr_model.classes_)
     df["confidence"] = [
         round(float(proba[i][classes.index(df["sentiment"][i])]), 4)
         for i in range(len(df))
@@ -619,25 +536,17 @@ def main():
         "low":    int(sum(1 for c in conf_values if c < 0.6)),
     }
 
-    # CLUSTERING (AHC)
-    # hanya ulasan dengan >= 3 token yang masuk clustering
+    # AHC Clustering
     valid_mask = df["tokens"].apply(len) >= 3
     X_valid    = X_cluster[valid_mask]
     idx_valid  = df[valid_mask].index.tolist()
     n          = len(X_valid)
 
-    # max_k = min(8, max(3, n // 200))
-    # untuk n=1225: max_k = min(8, max(3, 6)) = 6
-    # untuk n=649:  max_k = min(8, max(3, 3)) = 3
     max_k = min(8, max(3, n // 200))
-
     n_clusters, best_silhouette = find_optimal_k(X_valid, max_k)
 
-    # jalankan AHC dengan k yang terpilih
-    # linkage="average" = UPGMA (Unweighted Pair Group Method with Arithmetic Mean)
     labels_valid = AgglomerativeClustering(
-        n_clusters=n_clusters,
-        linkage="average"
+        n_clusters=n_clusters, linkage="average"
     ).fit_predict(X_valid)
 
     centroids_init = np.array([
@@ -650,26 +559,14 @@ def main():
     cluster_labels = np.full(len(df), -1, dtype=int)
     for i, idx in enumerate(idx_valid):
         cluster_labels[idx] = labels_valid[i]
-
     for i in range(len(df)):
         if cluster_labels[i] == -1:
             cluster_labels[i] = int(
                 np.argmin(np.linalg.norm(centroids_init - X_cluster[i], axis=1))
             )
 
-    # min_cluster_size = max(3, 0.5% dari total data)
-    # 0.5% dipilih karena lebih konservatif dari 0.2% sebelumnya:
-    # untuk n=1225: max(3, int(1225*0.005)) = max(3, 6) = 6
-    # untuk n=649:  max(3, int(649*0.005))  = max(3, 3) = 3
-    # Ini memastikan cluster dengan < 6 ulasan (untuk dataset ~1225)
-    # selalu di-merge ke cluster terdekat yang cukup besar
     min_cluster_size = max(3, int(len(df) * 0.005))
-
-    needs_merge = any(
-        np.sum(cluster_labels == cid) < min_cluster_size
-        for cid in range(n_clusters)
-    )
-    if needs_merge:
+    if any(np.sum(cluster_labels == cid) < min_cluster_size for cid in range(n_clusters)):
         cluster_labels = merge_small_clusters(
             cluster_labels, X_cluster, n_clusters, min_cluster_size
         )
@@ -679,11 +576,9 @@ def main():
         labels_valid_2 = AgglomerativeClustering(
             n_clusters=2, linkage="average"
         ).fit_predict(X_valid)
-
         cluster_labels = np.full(len(df), -1, dtype=int)
         for i, idx in enumerate(idx_valid):
             cluster_labels[idx] = labels_valid_2[i]
-
         c2 = np.array([
             X_valid[labels_valid_2 == cid].mean(axis=0)
             if (labels_valid_2 == cid).any()
@@ -695,11 +590,11 @@ def main():
                 cluster_labels[i] = int(
                     np.argmin(np.linalg.norm(c2 - X_cluster[i], axis=1))
                 )
-
         n_clusters_final = 2
 
     df["cluster_id"] = cluster_labels.tolist()
 
+    # Hitung ulang Silhouette Score setelah merge
     final_silhouette = best_silhouette
     if n_clusters_final >= 2 and len(df) >= 10:
         try:
@@ -733,22 +628,29 @@ def main():
             "sample_reviews":  get_sample_reviews(cluster_df, n=3),
         }
 
-    # topic_overview: distribusi aspek topik di seluruh dataset
-    # Menjawab: aspek mana yang paling banyak dibahas dan bagaimana sentimennya?
-    topic_overview = {}
+    # Topic Overview dengan analisis negatif detail per aspek
+    topic_overview  = {}
+    total_neg_count = int((df["sentiment"] == "negative").sum())
+
     for topic_key, label in TOPIC_LABELS.items():
         mask   = df["detected_topics"].apply(lambda t: topic_key in t)
         subset = df[mask]
-        if len(subset) == 0:
-            continue
-        pos = int((subset["sentiment"] == "positive").sum())
-        neg = int((subset["sentiment"] == "negative").sum())
+        if len(subset) == 0: continue
+
+        pos        = int((subset["sentiment"] == "positive").sum())
+        neg        = int((subset["sentiment"] == "negative").sum())
+        subset_neg = subset[subset["sentiment"] == "negative"]
+        neg_analysis = get_negative_analysis(subset_neg)
+
         topic_overview[topic_key] = {
-            "label":    label,
-            "count":    int(len(subset)),
-            "positive": pos,
-            "negative": neg,
-            "pos_pct":  round(pos / len(subset) * 100, 1) if len(subset) > 0 else 0.0,
+            "label":             label,
+            "count":             int(len(subset)),
+            "positive":          pos,
+            "negative":          neg,
+            "pos_pct":           round(pos / len(subset) * 100, 1) if len(subset) > 0 else 0.0,
+            "neg_share":         round(neg / max(total_neg_count, 1) * 100, 1),
+            "negative_keywords": neg_analysis["keywords"],
+            "negative_samples":  neg_analysis["samples"],
         }
 
     df["keywords"] = df["tokens"].apply(

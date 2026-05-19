@@ -5,6 +5,7 @@ use App\Http\Controllers\AnalysisController;
 
 // Analisis — upload CSV dan jalankan ML
 Route::post('/analyze', [AnalysisController::class, 'analyze']);
+Route::post('/scrape-and-analyze', [AnalysisController::class, 'scrapeAndAnalyze']);
 
 // Ambil hasil analisis berdasarkan session ID
 Route::get('/results/{id}', [AnalysisController::class, 'results']);
@@ -21,3 +22,5 @@ Route::get('/model-performance', [AnalysisController::class, 'modelPerformance']
 // Hapus Data (Delete)
 Route::delete('/brands/{brand_name}', [AnalysisController::class, 'deleteBrand']);
 Route::delete('/sessions/{id}', [AnalysisController::class, 'deleteSession']);
+
+Route::get('/sessions/{id}/download-csv', [AnalysisController::class, 'downloadCsv']);
