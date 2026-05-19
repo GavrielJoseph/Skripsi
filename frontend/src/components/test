@@ -1,0 +1,301 @@
+// import { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+// import { Scale, BarChart2, Lightbulb, Activity, FileText, AlertCircle, Medal, CheckCircle2, PackageSearch } from "lucide-react";
+
+// const API = "http://127.0.0.1:8000/api";
+// const COMPARE_COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#ec4899", "#22c55e"]; 
+
+// export default function ComparePage() {
+//   const navigate = useNavigate();
+//   const [sessions, setSessions]   = useState([]); // Sekarang state-nya menyimpan semua Sesi/File, bukan Brand
+//   const [selected, setSelected]   = useState([]); // Menyimpan ID sesi yang dipilih
+//   const [loading, setLoading]     = useState(true);
+
+//   useEffect(() => {
+//     fetch(`${API}/sessions/by-brand`)
+//       .then(r => r.json())
+//       .then(d => {
+//         if (d.status === "success") {
+//           // Flattening (Membongkar) data: Mengeluarkan semua sesi dari dalam brand menjadi 1 list sejajar
+//           let allSessions = [];
+//           d.brands.forEach(brand => {
+//             brand.sessions.forEach(session => {
+//               allSessions.push({
+//                 ...session,
+//                 brand_name: brand.brand_name // Menyisipkan nama brand ke dalam objek sesi
+//               });
+//             });
+//           });
+          
+//           // Mengurutkan dari yang terbaru
+//           allSessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+//           setSessions(allSessions);
+//         }
+//         setLoading(false);
+//       })
+//       .catch(() => setLoading(false));
+//   }, []);
+
+//   const toggleSession = (id) => {
+//     if (selected.includes(id)) {
+//       setSelected(selected.filter(s => s !== id));
+//     } else if (selected.length < 4) {
+//       setSelected([...selected, id]);
+//     }
+//   };
+
+//   // Mengambil data lengkap dari sesi yang dipilih
+//   const selectedData = sessions.filter(s => selected.includes(s.id));
+
+//   // Persiapan data untuk Stacked Bar Chart
+//   const barData = selectedData.map((s) => {
+//     const posPct = s.total_reviews > 0 ? ((s.positive_count / s.total_reviews) * 100) : 0;
+//     const negPct = 100 - posPct;
+    
+//     // Memotong nama file agar tidak terlalu panjang di grafik (menghilangkan .csv)
+//     const displayName = s.filename.replace('.csv', '').substring(0, 20) + (s.filename.length > 20 ? '...' : '');
+
+//     return {
+//       name: displayName,
+//       fullname: s.filename,
+//       Positif: parseFloat(posPct.toFixed(1)),
+//       Negatif: parseFloat(negPct.toFixed(1)),
+//     };
+//   });
+
+//   if (loading) return (
+//     <div className="flex items-center justify-center h-64 gap-3">
+//       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+//       <span className="text-gray-500 font-medium">Memuat data komparasi produk...</span>
+//     </div>
+//   );
+
+//   return (
+//     <div className="max-w-6xl mx-auto">
+//       <div className="mb-8">
+//         <h1 className="text-2xl font-bold text-gray-900 mb-1">Komparasi Sentimen per Produk / Dataset</h1>
+//         <p className="text-gray-500 text-sm">Pilih 2 hingga 4 dataset ulasan (mewakili produk/varian tertentu) untuk membandingkan performanya.</p>
+//       </div>
+
+//       {/* Pilih Sesi / Produk */}
+//       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
+//         <div className="flex items-center justify-between mb-4">
+//           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+//             <PackageSearch className="w-4 h-4 text-blue-600" /> Pilih Dataset Ulasan (Maksimal 4)
+//           </h2>
+//           <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md">{selected.length}/4 Terpilih</span>
+//         </div>
+        
+//         {sessions.length === 0 ? (
+//           <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+//             <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+//             <p className="text-gray-500 text-sm mb-4">Belum ada file dataset analisis yang tersimpan.</p>
+//             <button onClick={() => navigate("/analyze")} className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2.5 rounded-md font-medium transition-colors">
+//               Unggah CSV Baru
+//             </button>
+//           </div>
+//         ) : (
+//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto p-1">
+//             {sessions.map((session, i) => {
+//               const idx = selected.indexOf(session.id);
+//               const isSelected = idx !== -1;
+//               const pct = session.total_reviews > 0 ? ((session.positive_count / session.total_reviews) * 100).toFixed(1) : 0;
+              
+//               return (
+//                 <button
+//                   key={session.id}
+//                   onClick={() => toggleSession(session.id)}
+//                   className={`relative p-4 rounded-xl border text-left transition-all duration-200 flex flex-col h-full ${
+//                     isSelected
+//                       ? "border-gray-900 bg-gray-50 ring-1 ring-gray-900 shadow-sm"
+//                       : selected.length >= 4
+//                       ? "border-gray-200 bg-gray-50 opacity-40 cursor-not-allowed"
+//                       : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+//                   }`}
+//                   disabled={!isSelected && selected.length >= 4}
+//                 >
+//                   {isSelected && (
+//                     <div className="absolute top-0 left-0 w-full h-1.5 rounded-t-xl" style={{ backgroundColor: COMPARE_COLORS[idx] }} />
+//                   )}
+                  
+//                   <div className="flex items-start justify-between w-full mb-1 mt-1">
+//                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+//                       {session.brand_name}
+//                     </span>
+//                     {isSelected && <CheckCircle2 className="w-4 h-4 text-gray-900 flex-shrink-0" />}
+//                   </div>
+                  
+//                   {/* Nama file CSV (biasanya nama produk) */}
+//                   <h3 className="font-bold text-gray-900 text-sm leading-snug mb-2 line-clamp-2 mt-1 break-all" title={session.filename}>
+//                     {session.filename}
+//                   </h3>
+                  
+//                   <div className="mt-auto w-full">
+//                     <p className="text-gray-500 text-xs mb-1">{session.total_reviews.toLocaleString()} ulasan dianalisis</p>
+//                     <div className="flex items-center justify-between">
+//                       <p className={`text-xs font-bold ${pct >= 70 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-600"}`}>{pct}% positif</p>
+//                       <p className="text-gray-400 text-[10px]">{new Date(session.created_at).toLocaleDateString("id-ID", { month:"short", year:"2-digit" })}</p>
+//                     </div>
+//                   </div>
+//                 </button>
+//               );
+//             })}
+//           </div>
+//         )}
+//       </div>
+
+//       {/* Hasil perbandingan */}
+//       {selectedData.length >= 2 && (
+//         <div className="space-y-6">
+//           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+//             {/* Tabel ringkasan */}
+//             <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
+//               <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+//                 <Scale className="w-5 h-5 text-gray-700" /> Matriks Perbandingan Dataset
+//               </h2>
+//               <div className="overflow-x-auto flex-1">
+//                 <table className="w-full text-sm text-left">
+//                   <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+//                     <tr>
+//                       <th className="py-3 px-4 font-semibold">Dataset / File</th>
+//                       <th className="py-3 px-4 font-semibold text-right">Vol. Ulasan</th>
+//                       <th className="py-3 px-4 font-semibold text-right">Positif</th>
+//                       <th className="py-3 px-4 font-semibold text-right">Negatif</th>
+//                       <th className="py-3 px-4 font-semibold text-center w-36">Rasio Kepuasan</th>
+//                     </tr>
+//                   </thead>
+//                   <tbody className="divide-y divide-gray-100">
+//                     {[...selectedData]
+//                       .sort((a, b) => (b.positive_count / b.total_reviews) - (a.positive_count / a.total_reviews))
+//                       .map((session, i) => {
+//                         const posPct = session.total_reviews > 0 ? ((session.positive_count / session.total_reviews) * 100).toFixed(1) : 0;
+//                         const colorIdx = selected.indexOf(session.id);
+//                         return (
+//                           <tr key={i} className="hover:bg-gray-50 transition-colors">
+//                             <td className="py-3 px-4">
+//                               <div className="flex items-start gap-2.5">
+//                                 <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: COMPARE_COLORS[colorIdx] }} />
+//                                 <div>
+//                                   <div className="flex items-center gap-1">
+//                                     <span className="font-bold text-gray-900 text-xs truncate max-w-[150px]" title={session.filename}>
+//                                       {session.filename.replace('.csv', '')}
+//                                     </span>
+//                                     {i === 0 && <Medal className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" title="Rasio Terbaik" />}
+//                                   </div>
+//                                   <p className="text-[10px] text-gray-500 mt-0.5">{session.brand_name}</p>
+//                                 </div>
+//                               </div>
+//                             </td>
+//                             <td className="py-3 px-4 text-right text-gray-600">{session.total_reviews.toLocaleString()}</td>
+//                             <td className="py-3 px-4 text-right text-green-600 font-medium">{session.positive_count.toLocaleString()}</td>
+//                             <td className="py-3 px-4 text-right text-red-600 font-medium">{session.negative_count.toLocaleString()}</td>
+//                             <td className="py-3 px-4">
+//                               <div className="flex items-center justify-end gap-2">
+//                                 <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+//                                   <div className="h-full rounded-full transition-all duration-500" style={{ width: `${posPct}%`, backgroundColor: posPct >= 70 ? '#22c55e' : posPct >= 50 ? '#eab308' : '#ef4444' }} />
+//                                 </div>
+//                                 <span className={`font-bold text-xs w-9 text-right ${posPct >= 70 ? "text-green-600" : posPct >= 50 ? "text-yellow-600" : "text-red-600"}`}>{posPct}%</span>
+//                               </div>
+//                             </td>
+//                           </tr>
+//                         );
+//                       })}
+//                   </tbody>
+//                 </table>
+//               </div>
+//             </div>
+
+//             {/* Insight */}
+//             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col">
+//               <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+//                 <Lightbulb className="w-5 h-5 text-yellow-500" /> Executive Insight
+//               </h2>
+//               <div className="space-y-4 flex-1">
+//                 {(() => {
+//                   const sorted = [...selectedData].sort((a, b) => (b.positive_count / b.total_reviews) - (a.positive_count / a.total_reviews));
+//                   const best  = sorted[0];
+//                   const worst = sorted[sorted.length - 1];
+//                   const bestPct  = ((best.positive_count / best.total_reviews) * 100).toFixed(1);
+//                   const worstPct = ((worst.positive_count / worst.total_reviews) * 100).toFixed(1);
+//                   const diff = (bestPct - worstPct).toFixed(1);
+
+//                   return (
+//                     <>
+//                       <div className="bg-green-50 rounded-lg p-3.5 border border-green-100">
+//                         <p className="text-green-900 text-sm">
+//                           <span className="font-bold flex items-center gap-1.5 mb-1"><CheckCircle2 className="w-4 h-4 text-green-600" /> Top Performer</span>
+//                           <span className="text-green-800 text-xs leading-relaxed">
+//                             Dataset <strong>{best.filename}</strong> memiliki rasio kepuasan tertinggi mencapai {bestPct}%.
+//                           </span>
+//                         </p>
+//                       </div>
+//                       {diff > 5 && (
+//                         <div className="bg-orange-50 rounded-lg p-3.5 border border-orange-100">
+//                           <p className="text-orange-900 text-sm">
+//                             <span className="font-bold flex items-center gap-1.5 mb-1"><Activity className="w-4 h-4 text-orange-600" /> Sentiment Gap</span>
+//                             <span className="text-orange-800 text-xs leading-relaxed">
+//                               Terdapat selisih performa signifikan sebesar <strong>{diff}%</strong> antara {best.filename} dan {worst.filename}. Evaluasi ulang pada produk di urutan bawah sangat disarankan.
+//                             </span>
+//                           </p>
+//                         </div>
+//                       )}
+//                       <div className="bg-blue-50 rounded-lg p-3.5 border border-blue-100 mt-auto">
+//                         <p className="text-blue-900 text-sm">
+//                           <span className="font-bold flex items-center gap-1.5 mb-1"><BarChart2 className="w-4 h-4 text-blue-600" /> Validitas Komparasi</span>
+//                           <span className="text-blue-800 text-xs leading-relaxed">
+//                             Komparasi ini melibatkan total {selectedData.reduce((a, b) => a + b.total_reviews, 0).toLocaleString()} sampel ulasan konsumen organik.
+//                           </span>
+//                         </p>
+//                       </div>
+//                     </>
+//                   );
+//                 })()}
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Bar chart - 100% Stacked Bar Chart */}
+//           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+//             <div className="mb-6">
+//               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+//                 <BarChart2 className="w-5 h-5 text-gray-700" /> Proporsi Sentimen Relatif (100% Stacked)
+//               </h2>
+//               <p className="text-gray-500 text-xs mt-1">Distribusi sentimen dikonversi ke skala persentase 100% untuk mempermudah komparasi antar dataset dengan jumlah sampel yang berbeda-beda.</p>
+//             </div>
+            
+//             <ResponsiveContainer width="100%" height={280}>
+//               <BarChart data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }} layout="vertical">
+//                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+//                 <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, 100]} unit="%" />
+//                 <YAxis type="category" dataKey="name" tick={{ fill: "#374151", fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} width={160} />
+//                 <Tooltip 
+//                   contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', padding: '10px' }} 
+//                   cursor={{fill: '#f3f4f6'}}
+//                   formatter={(value, name) => [`${value}%`, name === 'Positif' ? 'Sentimen Positif' : 'Sentimen Negatif']}
+//                   labelFormatter={(label, payload) => {
+//                     // Menampilkan nama file full di tooltip kalau di-hover
+//                     if (payload && payload.length > 0) return payload[0].payload.fullname;
+//                     return label;
+//                   }}
+//                 />
+//                 <Legend wrapperStyle={{ paddingTop: '10px' }} iconType="circle" />
+                
+//                 <Bar dataKey="Positif" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} barSize={40} />
+//                 <Bar dataKey="Negatif" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={40} />
+//               </BarChart>
+//             </ResponsiveContainer>
+//           </div>
+//         </div>
+//       )}
+
+//       {selectedData.length === 1 && (
+//         <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-12 text-center mt-6">
+//           <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+//           <p className="text-gray-600 text-sm font-medium">Pilih minimal 1 dataset produk lagi di panel atas untuk melihat hasil komparasi silang.</p>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
