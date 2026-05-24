@@ -545,7 +545,7 @@ export default function AnalysisPage() {
                       <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-blue-400" />
                       <span>
                         Semakin banyak halaman, semakin banyak ulasan yang terkumpul —
-                        tapi waktu scraping juga semakin lama. 50 halaman per bintang bisa memakan waktu 30 menit lebih.
+                        tapi waktu scraping juga semakin lama. 50 halaman per bintang bisa memakan waktu 15-30 menit.
                       </span>
                     </div>
                   </div>

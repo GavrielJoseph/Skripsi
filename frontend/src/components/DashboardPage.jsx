@@ -124,7 +124,7 @@ export default function DashboardPage() {
           <div style={glass} className="rounded-xl p-16 text-center">
             <FolderOpen className="w-12 h-12 text-sky-200 mx-auto mb-4" />
             <h3 className="text-slate-800 font-semibold text-lg mb-2">Belum ada data analisis</h3>
-            <p className="text-slate-500 text-sm mb-6">Unggah file CSV ulasan produk untuk memulai analisis sentimen.</p>
+            <p className="text-slate-500 text-sm mb-6">Unggah file CSV ulasan produk atau scrape langsung dari Tokopedia.</p>
             <button onClick={() => navigate("/analyze")} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md font-medium text-sm transition-colors shadow-sm">
               Mulai Analisis Pertama
             </button>

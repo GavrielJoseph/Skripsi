@@ -1,7 +1,6 @@
 export default function AboutPage() {
   return (
     <>
-      {/* Background Wardah — sama persis dengan halaman lain */}
       <img
         src="/wardah.jpg"
         alt=""
@@ -24,8 +23,7 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto pb-16">
         <div className="bg-white/90 backdrop-blur-sm border border-sky-100 rounded-2xl p-8 shadow-sm">
 
-          {/* Label + Judul */}
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Rancangan</p>
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Tentang Sistem</p>
           <h1 className="text-xl font-bold text-gray-900 mb-6 leading-snug">
             Perancangan Sistem Analisis Opini Konsumen Terhadap Produk Skincare
             Menggunakan Regresi Logistik dan Klasterisasi Hierarki Aglomeratif
@@ -33,36 +31,31 @@ export default function AboutPage() {
 
           <hr className="border-gray-200 mb-6" />
 
-          {/* Konten */}
           <div className="space-y-4 text-gray-700 text-sm leading-relaxed">
             <p>
-              Industri skincare di Indonesia terus berkembang, dan konsumen semakin aktif
-              meninggalkan ulasan di platform seperti Tokopedia — mulai dari kesan pemakaian,
-              cocok atau tidaknya di kulit, harga, kemasan, sampai pengalaman belanja. Tapi
-              ulasan-ulasan itu datang dalam bahasa yang tidak formal, penuh singkatan dan
-              kata slang, dan jumlahnya terus bertambah setiap hari. Membacanya satu per satu
-              jelas bukan pilihan yang efisien.
+              SkinSentiment adalah sistem berbasis website yang dirancang untuk melakukan
+              analisis opini konsumen terhadap produk skincare dari platform Tokopedia.
+              Sistem menerima input berupa dataset ulasan dalam format CSV atau URL produk
+              Tokopedia untuk dilakukan scraping secara otomatis.
             </p>
             <p>
-              SkinSentiment dibuat untuk menjawab masalah itu. Sistem ini menerima data ulasan
-              dalam bentuk file CSV, lalu mengolahnya secara otomatis: mengklasifikasikan
-              sentimen tiap ulasan menjadi positif atau negatif menggunakan Regresi Logistik,
-              kemudian mengelompokkannya berdasarkan kesamaan topik pembahasan menggunakan
-              Klasterisasi Hierarki Aglomeratif.
+              Proses analisis dilakukan melalui dua tahap utama. Pertama, klasifikasi
+              sentimen menggunakan Regresi Logistik untuk menentukan apakah setiap ulasan
+              bersifat positif atau negatif. Kedua, pengelompokan ulasan berdasarkan
+              kesamaan topik pembahasan menggunakan Klasterisasi Hierarki Aglomeratif.
+              Selain itu, sistem juga melakukan identifikasi aspek produk yang dibahas
+              konsumen menggunakan pendekatan rule-based berbasis pencocokan kata kunci
+              domain skincare.
             </p>
             <p>
-              Kenapa perlu dua pendekatan? Karena label sentimen saja tidak cukup untuk
-              menjelaskan apa yang sebenarnya dikeluhkan. Dua ulasan negatif bisa bicara soal
-              hal yang sama sekali berbeda — satu tentang iritasi kulit, satu lagi tentang
-              paket yang datang rusak. Dengan clustering ditambah deteksi aspek berbasis
-              rule based, sistem bisa langsung menunjukkan isu mana yang paling dominan
-              tanpa perlu membaca ulasan satu per satu.
+              Hasil analisis ditampilkan dalam bentuk visualisasi distribusi sentimen,
+              ringkasan per aspek produk, daftar cluster topik, dan daftar ulasan beserta
+              label sentimen dan nilai confidence dari setiap ulasan.
             </p>
 
-            {/* Info pembuat */}
             <div className="pt-4 border-t border-gray-100 text-gray-600 text-sm space-y-0.5">
               <p>
-                <span className="font-semibold text-gray-800">👤 Dikembangkan oleh:</span>{" "}
+                <span className="font-semibold text-gray-800">Dikembangkan oleh:</span>{" "}
                 Gavriel Joseph Lim (NIM. 535220049)
               </p>
               <p>Program Studi Teknik Informatika</p>

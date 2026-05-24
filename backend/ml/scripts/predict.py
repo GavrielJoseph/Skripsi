@@ -82,7 +82,7 @@ ALL_TOPIC_WORDS = set(w for words in TOPIC_KEYWORDS.values() for w in words)
 TOPIC_LABELS = {
     "efek_produk": "Efek & Kecocokan Produk",
     "pengiriman":  "Layanan Pengiriman",
-    "harga_nilai": "Harga & Kualitas",
+    "harga_nilai": "Harga Produk",
     "kemasan":     "Kondisi Kemasan",
     "pembelian":   "Layanan Toko & Keaslian",
 }
@@ -542,7 +542,11 @@ def main():
     idx_valid  = df[valid_mask].index.tolist()
     n          = len(X_valid)
 
-    max_k = min(8, max(3, n // 200))
+    # Batas atas jumlah cluster K menggunakan rule of thumb sqrt(n/2)
+    # Referensi: Kaufman & Rousseeuw (1990) Finding Groups in Data, p.87
+    # Logika: jumlah cluster yang masuk akal tidak melebihi akar kuadrat
+    # dari setengah jumlah data. Dibatasi maksimum 8 untuk efisiensi komputasi.
+    max_k = min(8, max(2, int(np.sqrt(n / 2))))
     n_clusters, best_silhouette = find_optimal_k(X_valid, max_k)
 
     labels_valid = AgglomerativeClustering(
@@ -637,9 +641,9 @@ def main():
         subset = df[mask]
         if len(subset) == 0: continue
 
-        pos        = int((subset["sentiment"] == "positive").sum())
-        neg        = int((subset["sentiment"] == "negative").sum())
-        subset_neg = subset[subset["sentiment"] == "negative"]
+        pos          = int((subset["sentiment"] == "positive").sum())
+        neg          = int((subset["sentiment"] == "negative").sum())
+        subset_neg   = subset[subset["sentiment"] == "negative"]
         neg_analysis = get_negative_analysis(subset_neg)
 
         topic_overview[topic_key] = {

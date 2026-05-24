@@ -336,8 +336,24 @@ def main():
     n_sek   = len(df[df["source"] == "sekarmulyani"])
     n_g2g   = len(df[df["source"] == "g2g_tokopedia"])
     n_heyxi = len(df[df["source"] == "heyxi_tokopedia"])
-    print(f"[INFO] Total: {len(df)} | sekarmulyani: {n_sek} | G2G: {n_g2g} | Heyxi: {n_heyxi}")
-    print(f"[INFO] Distribusi:\n{df['label'].value_counts().to_string()}")
+
+    print(f"       Total Data Bersih : {len(df)}")
+    print(f"       - Sekarmulyani  : {n_sek}")
+    print(f"       - G2G Tokopedia : {n_g2g}")
+    print(f"       - Heyxi         : {n_heyxi}")
+
+    print("\n Rincian Distribusi (Positif vs Negatif):")
+    print(" 1. KESELURUHAN")
+    print(df['label'].value_counts().to_string())
+    
+    print("\n 2. SEKARMULYANI")
+    print(df[df['source'] == 'sekarmulyani']['label'].value_counts().to_string())
+    
+    print("\n 3. G2G TOKOPEDIA")
+    print(df[df['source'] == 'g2g_tokopedia']['label'].value_counts().to_string())
+    
+    print("\n 4. HEYXI TOKOPEDIA")
+    print(df[df['source'] == 'heyxi_tokopedia']['label'].value_counts().to_string())
 
     # STEP 2 — preprocessing
     print("\n[STEP 2] Preprocessing...")
