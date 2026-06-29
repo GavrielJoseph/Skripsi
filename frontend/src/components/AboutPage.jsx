@@ -23,7 +23,11 @@ export default function AboutPage() {
       <div className="max-w-3xl mx-auto pb-16">
         <div className="bg-white/90 backdrop-blur-sm border border-sky-100 rounded-2xl p-8 shadow-sm">
 
-          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Tentang Sistem</p>
+          <div className="flex items-start justify-between mb-1">
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Tentang Sistem</p>
+            <img src="/logofti.png" alt="Logo FTI UNTAR" className="h-12 w-auto" />
+          </div>
+
           <h1 className="text-xl font-bold text-gray-900 mb-6 leading-snug">
             Perancangan Sistem Analisis Opini Konsumen Terhadap Produk Skincare
             Menggunakan Regresi Logistik dan Klasterisasi Hierarki Aglomeratif
@@ -56,7 +60,7 @@ export default function AboutPage() {
             <div className="pt-4 border-t border-gray-100 text-gray-600 text-sm space-y-0.5">
               <p>
                 <span className="font-semibold text-gray-800">Dikembangkan oleh:</span>{" "}
-                Gavriel Joseph Lim (NIM. 535220049)
+                <span className="font-bold text-gray-900">Gavriel Joseph Lim</span> (NIM. 535220049)
               </p>
               <p>Program Studi Teknik Informatika</p>
               <p>Universitas Tarumanagara (2026)</p>

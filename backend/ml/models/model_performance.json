@@ -78,5 +78,19 @@
     "Bigram Detection"
   ],
   "label_method": "Rating 1-2=Negatif, 4-5=Positif, 3=Dihapus (Liu, 2012)",
-  "hyperparameter_tuning": "GridSearchCV 5-fold CV, scoring=f1_macro"
+  "hyperparameter_tuning": "GridSearchCV 5-fold CV, scoring=f1_macro",
+  "significance_test": {
+    "n": 12917,
+    "prediksi_benar": 11244,
+    "p_hat": 0.8705,
+    "baseline": 0.8,
+    "alpha": 0.05,
+    "se": 0.003519,
+    "z_hitung": 20.0259,
+    "z_kritis": 1.645,
+    "p_value": 0.0,
+    "tolak_h0": true,
+    "kesimpulan": "Tolak H0",
+    "interpretasi": "Akurasi 87.05% terbukti secara statistik lebih tinggi dari baseline 80% pada tingkat kepercayaan 95%."
+  }
 }

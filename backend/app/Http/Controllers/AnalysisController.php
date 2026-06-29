@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class AnalysisController extends Controller
 {
-    // =========================================================================
     // ANALYZE — Upload CSV lalu analisis
-    // =========================================================================
 
     public function analyze(Request $request)
     {
@@ -112,9 +110,7 @@ class AnalysisController extends Controller
         ]);
     }
 
-    // =========================================================================
     // SCRAPE AND ANALYZE
-    // =========================================================================
 
     public function scrapeAndAnalyze(Request $request)
     {
@@ -266,9 +262,7 @@ class AnalysisController extends Controller
         ]);
     }
 
-    // =========================================================================
     // HELPER — Simpan hasil
-    // =========================================================================
 
     private function saveResults(AnalysisSession $session, array $result): void
     {
@@ -307,9 +301,7 @@ class AnalysisController extends Controller
         ]);
     }
 
-    // =========================================================================
     // RESULTS & SESSIONS
-    // =========================================================================
 
     public function results($id)
     {
@@ -493,9 +485,7 @@ class AnalysisController extends Controller
         $session->delete();
     }
 
-    // =========================================================================
     // DOWNLOAD CSV RAW
-    // =========================================================================
 
     public function downloadCsv($id)
     {

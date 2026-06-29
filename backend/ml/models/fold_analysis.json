@@ -1,0 +1,86 @@
+{
+  "keterangan": "Confusion matrix per fold dari 5-fold cross validation menggunakan parameter terbaik (C=10.0, class_weight=balanced). Data dan preprocessing identik dengan train.py.",
+  "total_data": 64581,
+  "parameter": {
+    "C": 10.0,
+    "class_weight": "balanced"
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "n_train": 51664,
+      "n_val": 12917,
+      "tp": 6466,
+      "tn": 4772,
+      "fp": 623,
+      "fn": 1056,
+      "accuracy": 87.0,
+      "precision": 87.31,
+      "recall": 87.0,
+      "f1_score": 87.06
+    },
+    {
+      "fold": 2,
+      "n_train": 51665,
+      "n_val": 12916,
+      "tp": 6436,
+      "tn": 4751,
+      "fp": 644,
+      "fn": 1085,
+      "accuracy": 86.61,
+      "precision": 86.94,
+      "recall": 86.61,
+      "f1_score": 86.67
+    },
+    {
+      "fold": 3,
+      "n_train": 51665,
+      "n_val": 12916,
+      "tp": 6411,
+      "tn": 4750,
+      "fp": 645,
+      "fn": 1110,
+      "accuracy": 86.41,
+      "precision": 86.77,
+      "recall": 86.41,
+      "f1_score": 86.48
+    },
+    {
+      "fold": 4,
+      "n_train": 51665,
+      "n_val": 12916,
+      "tp": 6428,
+      "tn": 4790,
+      "fp": 605,
+      "fn": 1093,
+      "accuracy": 86.85,
+      "precision": 87.23,
+      "recall": 86.85,
+      "f1_score": 86.92
+    },
+    {
+      "fold": 5,
+      "n_train": 51665,
+      "n_val": 12916,
+      "tp": 6388,
+      "tn": 4764,
+      "fp": 631,
+      "fn": 1133,
+      "accuracy": 86.34,
+      "precision": 86.74,
+      "recall": 86.34,
+      "f1_score": 86.41
+    }
+  ],
+  "average": {
+    "tp": 6425.8,
+    "tn": 4765.4,
+    "fp": 629.6,
+    "fn": 1095.4,
+    "accuracy": 86.64,
+    "precision": 87.0,
+    "recall": 86.64,
+    "f1_score": 86.71,
+    "std_accuracy": 0.252
+  }
+}

@@ -30,8 +30,7 @@ nltk.download("punkt",     quiet=True)
 nltk.download("stopwords", quiet=True)
 from nltk.corpus import stopwords
 
-# Custom stopwords untuk bahasa gaul e-commerce Indonesia
-# Catatan: "tidak" TIDAK dimasukkan di sini karena dilindungi oleh NEGASI_WORDS
+# kata negasi tidak dimasukkan ke stopwords supaya negasi handling bisa jalan
 CUSTOM_STOPWORDS = {
     "nya", "yg", "aja", "jd", "tp", "banget", "sih", "buat", "biar", "mah",
     "kalo", "pas", "terus", "sama", "udah", "gini", "gitu", "ya", "deh", "dong",
@@ -40,13 +39,8 @@ CUSTOM_STOPWORDS = {
     "dalam", "pada", "juga", "sudah", "ada", "saja", "lagi", "karena",
     "kalau", "pun", "bisa", "akan", "jadi", "tapi"
 }
-# FIX: "tidak" dihapus dari CUSTOM_STOPWORDS karena ada di NEGASI_WORDS
-# Sebelumnya duplikat di dua set — tidak broken tapi membingungkan secara logika
 
 NEGASI_WORDS = {"tidak", "bukan", "jangan", "belum", "tanpa", "kurang"}
-# STOPWORDS_ID = gabungan stopwords bawaan NLTK + custom, DIKURANGI kata negasi
-# Kata negasi WAJIB dipertahankan karena mengubah makna sentimen:
-# "tidak cocok" ≠ "cocok", "tidak bagus" ≠ "bagus"
 STOPWORDS_ID = set(stopwords.words("indonesian")).union(CUSTOM_STOPWORDS) - NEGASI_WORDS
 
 try:
@@ -58,9 +52,7 @@ except ImportError:
     STEMMER_AVAILABLE = False
     print("[WARNING] PySastrawi tidak ada. pip install PySastrawi")
 
-
-# EMOJI MAP — emoji dikonversi ke kata sebelum cleaning
-# supaya informasi sentimen dari emoji tidak hilang
+# emoji dikonversi ke kata supaya infonya tidak hilang saat cleaning
 EMOJI_MAP = {
     "👍": " bagus ", "👎": " buruk ", "😍": " suka ",  "🥰": " suka ",  "😘": " suka ",
     "❤️": " suka ",  "💕": " suka ",  "💞": " suka ", "😊": " senang ", "😁": " senang ",
@@ -68,8 +60,7 @@ EMOJI_MAP = {
     "🤢": " buruk ",  "🤮": " buruk ", "⭐": " bintang ", "🔥": " bagus ", "✨": " bagus ",
 }
 
-# KAMUS SKINCARE — kamus tambahan domain skincare
-# melengkapi nasalsabila + new_kamusalay untuk istilah Tokopedia
+# kamus tambahan khusus domain skincare dan bahasa gaul tokopedia
 KAMUS_SKINCARE = {
     "tak":"tidak", "gak":"tidak", "ga":"tidak", "ngga":"tidak", "nggak":"tidak",
     "tdk":"tidak", "gk":"tidak", "ngak":"tidak", "kagak":"tidak",
@@ -114,6 +105,7 @@ KAMUS_SKINCARE = {
 
 
 def load_kamus_alay():
+    # pakai cache kalau sudah ada, tidak perlu download ulang
     if os.path.exists(KAMUS_PATH):
         print("[INFO] Memuat kamus dari cache...")
         with open(KAMUS_PATH, "r", encoding="utf-8") as f:
@@ -123,7 +115,9 @@ def load_kamus_alay():
         return kamus
 
     kamus = {}
-    print("[INFO] Download kamus 1: nasalsabila/kamus-alay (Salsabila et al., 2018)...")
+
+    # download kamus nasalsabila
+    print("[INFO] Download kamus 1: nasalsabila/kamus-alay...")
     try:
         r = requests.get(
             "https://raw.githubusercontent.com/nasalsabila/kamus-alay/master/colloquial-indonesian-lexicon.csv",
@@ -139,7 +133,8 @@ def load_kamus_alay():
     except Exception as e:
         print(f"  [WARNING] {e}")
 
-    print("[INFO] Download kamus 2: new_kamusalay (Ibrohim & Budi, 2019)...")
+    # download kamus new_kamusalay
+    print("[INFO] Download kamus 2: new_kamusalay...")
     n = len(kamus)
     try:
         r = requests.get(
@@ -156,6 +151,7 @@ def load_kamus_alay():
     except Exception as e:
         print(f"  [WARNING] {e}")
 
+    # merge kamus skincare manual
     n = len(kamus)
     kamus.update(KAMUS_SKINCARE)
     print(f"[INFO] Kamus skincare manual: {len(kamus)-n} entri baru")
@@ -168,8 +164,7 @@ def load_kamus_alay():
 KAMUS_ALAY = load_kamus_alay()
 
 
-# ── PREPROCESSING ──
-# Urutan HARUS identik dengan predict.py supaya token training = token prediksi
+# preprocessing — urutan harus sama persis dengan predict.py
 
 def translate_emoji(text):
     for emoji, word in EMOJI_MAP.items():
@@ -177,15 +172,14 @@ def translate_emoji(text):
     return text
 
 def clean_repeated(text):
-    # "bagussss" → "baguss"
+    # "bagussss" -> "baguss"
     return re.sub(r'(.)\1{2,}', r'\1\1', text)
 
 def normalize_alay(text):
     return " ".join([v for w in text.split() for v in [KAMUS_ALAY.get(w, w)] if v])
 
 def handle_negation(tokens):
-    # "tidak" + "cocok" → "tidak_cocok" (satu token)
-    # supaya stemmer tidak memisahkan maknanya
+    # gabung kata negasi + kata berikutnya jadi satu token, misal: tidak_cocok
     result = []
     i = 0
     while i < len(tokens):
@@ -227,9 +221,7 @@ def preprocess_text(text):
     return tokens
 
 
-# ── LOAD DATASET ──
-# Label dari rating: 1-2 → negatif, 4-5 → positif, 3 → dibuang (ambigu)
-# Referensi: Liu (2012)
+# load dataset — rating 1-2 = negatif, 4-5 = positif, rating 3 dibuang
 
 def load_sekarmulyani():
     if os.path.exists(TRAINING_CSV):
@@ -282,7 +274,7 @@ def load_csv_domain(csv_path, source_name):
         except: continue
         if   rating <= 2: label = "negative"
         elif rating >= 4: label = "positive"
-        else: continue  # rating 3 dibuang — labelnya ambigu (Liu, 2012)
+        else: continue  # rating 3 dibuang karena ambigu
         rows.append({"review_text": text, "label": label, "source": source_name})
 
     result = pd.DataFrame(rows).drop_duplicates(subset=["review_text"])
@@ -300,8 +292,7 @@ def build_bigram(corpus):
     return phraser
 
 def train_w2v(corpus):
-    # Word2Vec Skip-gram (sg=1): lebih baik untuk kata jarang (Mikolov et al., 2013)
-    # epochs=20: vektor lebih stabil, seed=42: reproducible
+    # skip-gram (sg=1), epochs=20 supaya vektor lebih stabil
     print("[INFO] Word2Vec training (epochs=20)...")
     model = Word2Vec(
         sentences=corpus, vector_size=100, window=5,
@@ -322,7 +313,7 @@ def main():
     print("  Dataset: sekarmulyani + G2G Tokopedia + Heyxi Tokopedia")
     print("=" * 60)
 
-    # STEP 1 — gabungkan semua dataset
+    # step 1: load dan gabungkan semua dataset
     print("\n[STEP 1] Load dataset...")
     df = pd.concat([load_sekarmulyani(), load_g2g(), load_heyxi()], ignore_index=True)
     df = df.dropna(subset=["review_text", "label"])
@@ -345,17 +336,17 @@ def main():
     print("\n Rincian Distribusi (Positif vs Negatif):")
     print(" 1. KESELURUHAN")
     print(df['label'].value_counts().to_string())
-    
+
     print("\n 2. SEKARMULYANI")
     print(df[df['source'] == 'sekarmulyani']['label'].value_counts().to_string())
-    
+
     print("\n 3. G2G TOKOPEDIA")
     print(df[df['source'] == 'g2g_tokopedia']['label'].value_counts().to_string())
-    
+
     print("\n 4. HEYXI TOKOPEDIA")
     print(df[df['source'] == 'heyxi_tokopedia']['label'].value_counts().to_string())
 
-    # STEP 2 — preprocessing
+    # step 2: preprocessing
     print("\n[STEP 2] Preprocessing...")
     df["tokens"] = df["review_text"].apply(preprocess_text)
     df = df[df["tokens"].map(len) > 0]
@@ -363,35 +354,33 @@ def main():
     print(f"[INFO] Setelah preprocessing: {len(df)} baris")
     print(f"[INFO] Contoh token negasi: {[t for t, _ in Counter(neg_samples).most_common(8)]}")
 
-    # STEP 3 — bigram
+    # step 3: bigram
     print("\n[STEP 3] Bigram detection...")
     phraser      = build_bigram(df["tokens"].tolist())
     df["tokens"] = df["tokens"].apply(lambda t: list(phraser[t]))
     bg_samples   = [t for tokens in df["tokens"][:500] for t in tokens if "_" in t and not t.startswith("tidak_")]
     print(f"[INFO] Contoh bigram: {[b for b, _ in Counter(bg_samples).most_common(8)]}")
 
-    # STEP 4 — Word2Vec
+    # step 4: training word2vec
     print("\n[STEP 4] Word2Vec training...")
     w2v = train_w2v(df["tokens"].tolist())
     joblib.dump(w2v, os.path.join(MODEL_DIR, "vectorizer.pkl"))
 
-    # STEP 5 — document vectors
+    # step 5: buat document vector tiap ulasan
     print("\n[STEP 5] Document vectors...")
     X = np.array([doc_vector(t, w2v) for t in df["tokens"]])
     y = df["label"].values
     print(f"[INFO] Shape: {X.shape}")
 
-    # STEP 6 — split 80/20
-    # stratify=y: proporsi positif/negatif di train dan test tetap sama
+    # step 6: split train/test 80/20
+    # stratify=y supaya proporsi positif/negatif sama di train dan test
     print("\n[STEP 6] Split 80/20...")
     X_tr, X_te, y_tr, y_te = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     print(f"[INFO] Train: {len(X_tr)} | Test: {len(X_te)}")
 
-    # STEP 7 — GridSearchCV
-    # f1_macro dipilih karena data imbalanced (lebih banyak positif)
-    # class_weight balanced: kelas minoritas (negatif) diberi bobot lebih
+    # step 7: cari hyperparameter terbaik pakai gridsearchcv
     print("\n[STEP 7] GridSearchCV — hyperparameter tuning...")
     print("[INFO] Parameter: C=[0.1, 1.0, 10.0], class_weight=[None, balanced]")
     print("[INFO] Scoring: f1_macro, CV: 5-fold")
@@ -412,7 +401,7 @@ def main():
     lr = grid.best_estimator_
     joblib.dump(lr, os.path.join(MODEL_DIR, "logistic_regression.pkl"))
 
-    # STEP 8 — evaluasi
+    # step 8: evaluasi pada test set
     print("\n[STEP 8] Evaluasi pada data test...")
     y_pred = lr.predict(X_te)
     acc = accuracy_score(y_te, y_pred)
@@ -434,7 +423,7 @@ def main():
     print(f"  Aktual Positif | {fn:12} | {tp:12}")
     print(classification_report(y_te, y_pred))
 
-    # STEP 9 — simpan model_performance.json
+    # step 9: simpan hasil ke model_performance.json
     grid_results = []
     for params, mean_score, std_score in zip(
         grid.cv_results_["params"],
@@ -486,7 +475,7 @@ def main():
             "Stemming PySastrawi",
             "Bigram Detection",
         ],
-        "label_method":          "Rating 1-2=Negatif, 4-5=Positif, 3=Dihapus (Liu, 2012)",
+        "label_method":          "Rating 1-2=Negatif, 4-5=Positif, 3=Dihapus",
         "hyperparameter_tuning": "GridSearchCV 5-fold CV, scoring=f1_macro",
     }
 

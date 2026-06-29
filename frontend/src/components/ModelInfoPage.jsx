@@ -212,7 +212,7 @@ export default function ModelInfoPage() {
             <div className="space-y-6">
               <div className="bg-white/90 backdrop-blur-sm border border-sky-100 shadow-sm rounded-xl p-6">
                 <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <Database className="w-5 h-5 text-blue-600" /> Spesifikasi Dataset Induk
+                  <Database className="w-5 h-5 text-blue-600" /> Spesifikasi Dataset Training
                 </h2>
                 <InfoRow label="Skema Pelabelan Asli" value="Rating 1-2 (Negatif), 4-5 (Positif), 3 (Drop)" />
                 <InfoRow label="Bobot Kelas (Class Weight)" value="Balanced Penalty" />
